@@ -3,6 +3,7 @@ class bimodal:
         self.bits_to_index = bits_to_index
         self.size_of_branch_table = 2**bits_to_index
         self.branch_table = [0 for i in range(self.size_of_branch_table)]
+        
         self.total_predictions = 0
         self.total_taken_pred_taken = 0
         self.total_taken_pred_not_taken = 0
