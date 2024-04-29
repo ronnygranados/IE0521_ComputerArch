@@ -38,7 +38,7 @@ elif options.branch_predictor_type == "2":
 #Si --bp 3 entonces usamos perceptron
 if options.branch_predictor_type == "3":
     #Deben inicializar perceptron con los parámetros necesarios
-    branch_predictor = perceptron()
+    branch_predictor = perceptron(int(options.bits_to_index),int(options.global_history_size))
     branch_predictor.print_info()  
 #Si --bp 4 entonces usamos el que ustedes proponen
 if options.branch_predictor_type == "4":
