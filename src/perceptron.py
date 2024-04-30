@@ -65,17 +65,21 @@ class perceptron:
 
     def predict(self, PC):
         perceptron_index = int(PC) % self.PC_table_size
-        pred = 0
         
-        pred += self.PC_table[perceptron_index][0] # Con esto obtengo w0
+        pred = self.PC_table[perceptron_index][0] # Con esto obtengo w0
         
         for i in range(self.bits_to_GH):
-            if self.global_history_reg[i-1] == 1:
-                pred += self.PC_table[perceptron_index][i] * int(self.global_history_reg[-i])
-            else:
-                pred -= self.PC_table[perceptron_index][i] * int(self.global_history_reg[-i])
+            pred += self.PC_table[perceptron_index][i] * int(self.global_history_reg[i])
         
-        self.perceptron_steps = abs(pred)
+        # # ------------------------------ Esto vino del código de GitHub, no estoy muy seguro
+        # for i in range(self.bits_to_GH):
+        #     if self.global_history_reg[i-1] == 1:
+        #         pred += self.PC_table[perceptron_index][i] * int(self.global_history_reg[-i])
+        #     else:
+        #         pred -= self.PC_table[perceptron_index][i] * int(self.global_history_reg[-i])
+        # # ------------------------------
+        
+        # self.perceptron_steps = abs(pred)
             
         if pred > 0:
             return "T"
@@ -122,15 +126,11 @@ class perceptron:
         # else:
         #     self.global_history_reg = self.global_history_reg[-self.bits_to_GH+1:] + "0"
         
-        
         # De aquí para abajo está lo que yo implementé 
         
         # Calculo de nuevo la predicción para poder actualizar mis pesos
         pred = 0
         pred += self.PC_table[perceptron_index][0] # Con esto obtengo w0
-        # pred = 0
-        
-        # pred += self.PC_table[perceptron_index][0] # Con esto obtengo w0
         
         for i in range(self.bits_to_GH):
             pred += int(self.global_history_reg[i]) * self.PC_table[perceptron_index][i]
@@ -141,9 +141,10 @@ class perceptron:
         else:
             t = -1
         
+        # Pseudo código del paper para actualizar pesos
         if np.sign(pred) != t or abs(pred) <= self.umbral:
             for i in range(self.bits_to_GH):
-                self.PC_table[perceptron_index][i] += self.PC_table[perceptron_index][i] + t*int(self.global_history_reg[-i])
+                self.PC_table[perceptron_index][i] += self.PC_table[perceptron_index][i] + t*int(self.global_history_reg[i])
 
         # #Update GHR
         if result == "T":
@@ -162,6 +163,3 @@ class perceptron:
             self.total_not_taken_pred_taken += 1
             
         self.total_predictions += 1
-        #Escriba aquí el código para actualizar
-        #La siguiente línea es solo para que funcione la prueba
-        #Quítela para implementar su código
