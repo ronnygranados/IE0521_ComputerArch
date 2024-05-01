@@ -8,16 +8,8 @@ class perceptron:
         
         self.PC_table_size = bits_to_PC ** 2
         
-        # self.PC_table = []
-        
         # Inicializo la matriz
         self.PC_table = np.zeros((2**bits_to_PC, bits_global_history+1))
-        # for _ in range(2**bits_to_PC): # 2** 
-        #     self.PC_table.append([0] * (bits_global_history+1))
-        
-        # for i in range(2**bits_to_PC):
-        #     for j in range(bits_global_history+1):
-        #         self.PC_table[i][j] = 0
         
         self.global_history_reg = ""
         for i in range(bits_global_history):
@@ -57,7 +49,7 @@ class perceptron:
         self.pred = self.PC_table[perceptron_index][0] * self.x0 # Con esto obtengo w0
         
         for i in range(1, self.bits_to_GH+1): # Estoy iterando desde [1, GH+1]
-                                              # O sea, las filas desde w1-wn
+                                              # Es decir, las filas desde w1-wn
             self.pred += self.PC_table[perceptron_index][i] * self.reg(self.global_history_reg[-i])
 
         if self.pred >= 0:
