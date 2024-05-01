@@ -3,27 +3,29 @@ import numpy as np
 
 class perceptron:
     def __init__(self, bits_to_PC, bits_global_history):
-        self.perceptron_steps = 0
         self.bits_to_PC = bits_to_PC
         self.bits_to_GH = bits_global_history
         
         self.PC_table_size = bits_to_PC ** 2
         
-        self.PC_table = []
+        # self.PC_table = []
         
         # Inicializo la matriz
-        for _ in range(bits_to_PC**2):
-            self.PC_table.append([0] * bits_global_history)
+        self.PC_table = np.zeros((2**bits_to_PC, bits_global_history+1))
+        # for _ in range(2**bits_to_PC): # 2** 
+        #     self.PC_table.append([0] * (bits_global_history+1))
         
-        for i in range(bits_to_PC ** 2):
-            for j in range(bits_global_history):
-                self.PC_table[i][j] = 0
+        # for i in range(2**bits_to_PC):
+        #     for j in range(bits_global_history+1):
+        #         self.PC_table[i][j] = 0
         
         self.global_history_reg = ""
         for i in range(bits_global_history):
             self.global_history_reg += "0"
         
         self.umbral = math.floor(1.93*bits_global_history + 14)
+        self.pred = 0
+        self.x0 = 1
         
         #Escriba aquí el init de la clase
         self.total_predictions = 0
@@ -49,91 +51,22 @@ class perceptron:
         formatted_perc = "{:.3f}".format(perc_correct)
         print("\t% predicciones correctas:\t\t\t\t"+str(formatted_perc)+"%")
 
-    # def predict(self, PC):
-    #     perceptron_index = int(PC) % self.PC_table_size
-    #     prediction = 0
-        
-    #     prediction += self.PC_table[perceptron_index][0] # Con esto obtengo w0
-        
-    #     for i in range(self.bits_to_GH):
-    #         prediction += int(self.global_history_reg[-i]) * self.PC_table[perceptron_index][i]
-            
-    #     if prediction > 0:
-    #         return "T"
-    #     else:
-    #         return "N"
-
     def predict(self, PC):
         perceptron_index = int(PC) % self.PC_table_size
         
-        pred = self.PC_table[perceptron_index][0] # Con esto obtengo w0
+        self.pred = self.PC_table[perceptron_index][0] * self.x0 # Con esto obtengo w0
         
-        for i in range(self.bits_to_GH):
-            pred += self.PC_table[perceptron_index][i] * int(self.global_history_reg[i])
-        
-        # # ------------------------------ Esto vino del código de GitHub, no estoy muy seguro
-        # for i in range(self.bits_to_GH):
-        #     if self.global_history_reg[i-1] == 1:
-        #         pred += self.PC_table[perceptron_index][i] * int(self.global_history_reg[-i])
-        #     else:
-        #         pred -= self.PC_table[perceptron_index][i] * int(self.global_history_reg[-i])
-        # # ------------------------------
-        
-        # self.perceptron_steps = abs(pred)
-            
-        if pred > 0:
+        for i in range(1, self.bits_to_GH+1): # Estoy iterando desde [1, GH+1]
+                                              # O sea, las filas desde w1-wn
+            self.pred += self.PC_table[perceptron_index][i] * self.reg(self.global_history_reg[-i])
+
+        if self.pred >= 0:
             return "T"
         else:
             return "N"
 
     def update(self, PC, result, prediction):
         perceptron_index = int(PC) % self.PC_table_size
-        # Aquí está lo que viene en el repo de GitHub: https://github.com/taraeicher/PerceptronBranchPredictor/blob/master/perceptron.cc
-        
-        # if (result != prediction) or (self.perceptron_steps <= self.umbral):
-            
-        #     if (result == "T"):
-        #         new_val = self.PC_table[perceptron_index][0] + 1
-        #         if (new_val > 128):
-        #             self.PC_table[perceptron_index][0] = 128
-        #         else:
-        #             self.PC_table[perceptron_index][0] += 1
-        #     else:
-        #         new_val = self.PC_table[perceptron_index][0] - 1
-        #         if (new_val < -128):
-        #             self.PC_table[perceptron_index][0] = -128
-        #         else:
-        #             self.PC_table[perceptron_index][0] -= 1
-            
-            
-        #     for i in range(self.bits_to_GH):
-        #         # Actualizo pesos
-        #         if (result == "T" and self.global_history_reg[-i] == 1) or (result == "N" and self.global_history_reg[-i] == 0):
-        #             new_val = self.PC_table[perceptron_index][i] + 1
-        #             if (new_val > self.umbral):
-        #                 self.PC_table[perceptron_index][i] = self.umbral
-        #             else:
-        #                 self.PC_table[perceptron_index][i] += 1
-        #         else:
-        #             new_val = self.PC_table[perceptron_index][i] - 1
-        #             if (new_val < self.umbral * (-1)):
-        #                 self.PC_table[perceptron_index][i] = self.umbral * (-1)
-        #             else:
-        #                 self.PC_table[perceptron_index][i] -= 1
-        # #Update GHR
-        # if result == "T":
-        #     self.global_history_reg = self.global_history_reg[-self.bits_to_GH+1:] + "1"
-        # else:
-        #     self.global_history_reg = self.global_history_reg[-self.bits_to_GH+1:] + "0"
-        
-        # De aquí para abajo está lo que yo implementé 
-        
-        # Calculo de nuevo la predicción para poder actualizar mis pesos
-        pred = 0
-        pred += self.PC_table[perceptron_index][0] # Con esto obtengo w0
-        
-        for i in range(self.bits_to_GH):
-            pred += int(self.global_history_reg[i]) * self.PC_table[perceptron_index][i]
 
         # Para poder implementar el pseudo código del paper
         if result == "T":
@@ -142,17 +75,20 @@ class perceptron:
             t = -1
         
         # Pseudo código del paper para actualizar pesos
-        if np.sign(pred) != t or abs(pred) <= self.umbral:
-            for i in range(self.bits_to_GH):
-                self.PC_table[perceptron_index][i] += self.PC_table[perceptron_index][i] + t*int(self.global_history_reg[i])
+        if np.sign(self.pred) != t or abs(self.pred) <= self.umbral:
+            # Actualizar por aparte a w0
+            self.PC_table[perceptron_index][0] = self.PC_table[perceptron_index][0] + t*self.x0
+            
+            for i in range(1, self.bits_to_GH+1):
+                self.PC_table[perceptron_index][i] += t*self.reg(self.global_history_reg[-i])
 
-        # #Update GHR
+        # Update GHR
         if result == "T":
             self.global_history_reg = self.global_history_reg[-self.bits_to_GH+1:] + "1"
         else:
             self.global_history_reg = self.global_history_reg[-self.bits_to_GH+1:] + "0"
         
-        #Update stats
+        # Update stats
         if result == "T" and result == prediction:
             self.total_taken_pred_taken += 1
         elif result == "T" and result != prediction:
@@ -163,3 +99,9 @@ class perceptron:
             self.total_not_taken_pred_taken += 1
             
         self.total_predictions += 1
+        
+    def reg(self, bit):
+        if bit == "1":
+            return 1
+        elif bit == "0":
+            return -1
