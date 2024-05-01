@@ -70,7 +70,6 @@ class perceptron:
         if np.sign(self.pred) != t or abs(self.pred) <= self.umbral:
             # Actualizar por aparte a w0
             self.PC_table[perceptron_index][0] = self.PC_table[perceptron_index][0] + t*self.x0
-            
             for i in range(1, self.bits_to_GH+1):
                 self.PC_table[perceptron_index][i] += t*self.reg(self.global_history_reg[-i])
 
