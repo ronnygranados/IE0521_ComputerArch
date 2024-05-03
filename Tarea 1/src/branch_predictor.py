@@ -43,7 +43,8 @@ if options.branch_predictor_type == "3":
 #Si --bp 4 entonces usamos el que ustedes proponen
 if options.branch_predictor_type == "4":
     #Deben inicializar su predictor con los parámetros necesarios
-    branch_predictor = ie0521_bp(int(options.bits_to_index),int(options.local_history_size))
+    # branch_predictor = ie0521_bp(int(options.bits_to_index),int(options.local_history_size))
+    branch_predictor = ie0521_bp()
     branch_predictor.print_info()
 
 

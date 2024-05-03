@@ -2,7 +2,7 @@ import numpy as np
 import math
 
 class ie0521_bp:
-    def __init__(self, bits_PC, bits_LH):
+    def __init__(self, bits_PC=11, bits_LH=8):
         self.bits_PC = bits_PC
         self.bits_LH = bits_LH
         
@@ -22,7 +22,9 @@ class ie0521_bp:
         self.pred = 0
         self.x0 = 1
         
-        #Escriba aquí el init de la clase
+        # Cálculo de presupuesto:
+        self.presupuesto = (self.bits_LH * 2**self.bits_PC) + (7 * 2**self.bits_LH * (self.bits_LH +1))
+        
         self.total_predictions = 0
         self.total_taken_pred_taken = 0
         self.total_taken_pred_not_taken = 0
@@ -32,7 +34,10 @@ class ie0521_bp:
 
     def print_info(self):
         print("Parámetros del predictor:")
-        print("\tTipo de predictor:\t\t\tNombre de su predictor")
+        print("\tTipo de predictor:\t\t\t Perceptron-Shared")
+        print("\tEntradas en la Tabla PC:\t\t\t"+str(2**self.bits_PC))
+        print("\tTamaño de los registros de historia global:\t"+str(self.bits_LH))
+        print("\tPresupuesto total:\t\t\t\t" + str(self.presupuesto))
 
     def print_stats(self):
         print("Resultados de la simulación")
@@ -68,12 +73,23 @@ class ie0521_bp:
         else:
             t = -1
         
-        # Actualizo los pesos
+        # Actualizo los pesos con 7 bits CON signo
         if np.sign(self.pred) != t or abs(self.pred) <= self.umbral:
+            # Actualizo w_0
             self.perceptron_table[perceptron_index][0] += t*self.x0
+            if self.perceptron_table[perceptron_index][0] >= 63:
+                self.perceptron_table[perceptron_index][0] = 63
+            elif self.perceptron_table[perceptron_index][0] <= -64:
+                self.perceptron_table[perceptron_index][0] = -64
+            
+            # Actualizo w_i
             for i in range(1, self.bits_LH+1):
                 self.perceptron_table[perceptron_index][i] += t*self.reg(self.table_PC[pc_index][-i])
-        
+                if self.perceptron_table[perceptron_index][i] >= 63:
+                    self.perceptron_table[perceptron_index][i] = 63
+                elif self.perceptron_table[perceptron_index][i] <= -64:
+                    self.perceptron_table[perceptron_index][i] = -64
+
         # Actualizo los registros desplazantes de la tabla PC
         if result == "T":
             entry_reg = self.table_PC[pc_index]
@@ -95,7 +111,10 @@ class ie0521_bp:
             self.total_not_taken_pred_taken += 1
             
         self.total_predictions += 1
-        
+    
+    '''Esta función recibe como parámetros un string que toma desde el registro desplazante
+    de historia local (que contiene únicamente 1s y 0s y los devuelve como enteros: 1 si se
+    toma un "1" y -1 si se toma un "0")'''
     def reg(self, bit):
         if bit == "1":
             return 1
