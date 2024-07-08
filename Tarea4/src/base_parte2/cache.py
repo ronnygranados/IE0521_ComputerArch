@@ -7,11 +7,20 @@ class cache:
                        cache_l2_capacity, cache_l2_assoc,
                        cache_l3_capacity, cache_l3_assoc,
                        block_size, trace, repl_policy="l"):
-        
-    # def __init__(self, cache_l1_capacity, cache_l1_assoc, block_size, repl_policy="l"):
-        
+
         self.total_access = 0
         self.total_misses = 0
+        
+        # Parámetros de interés
+        
+        self.total_access_l1 = 0
+        self.total_misses_l1 = 0
+        
+        self.total_access_l2 = 0
+        self.total_misses_l2 = 0
+        
+        self.total_access_l3 = 0
+        self.total_misses_l3 = 0
         
         self.trace = trace
 
@@ -54,27 +63,40 @@ class cache:
 
     def print_stats(self):
         print(f"Resultados de la simulación: {self.trace}")
-        miss_rate = (100.0 * self.total_misses) / self.total_access
-        miss_rate = "{:.3f}".format(miss_rate)
-        result_str = str(self.total_misses) + "," + miss_rate + "%"
-        print(result_str)
+        
+        if self.total_access_l1 != 0:
+            miss_rate_l1 = (100.0 * self.total_misses_l1) / self.total_access_l1
+            miss_rate_l1 = "{:.3f}".format(miss_rate_l1)
+        else:
+            miss_rate_l1 = 0
+            
+        if self.total_access_l2 != 0:
+            miss_rate_l2 = (100.0 * self.total_misses_l2) / self.total_access_l2
+            miss_rate_l2 = "{:.3f}".format(miss_rate_l2)
+        else:
+            miss_rate_l2 = 0
+        
+        if self.total_access_l3 != 0:
+            miss_rate_l3 = (100.0 * self.total_misses_l3) / self.total_access_l3
+            miss_rate_l3 = "{:.3f}".format(miss_rate_l3)
+        else:
+            miss_rate_l3 = 0
+        
+        print(f"Miss rate L1: {miss_rate_l1} %")
+        print(f"Miss rate L2: {miss_rate_l2} %")
+        print(f"Miss rate L3: {miss_rate_l3} %") 
+        
+        # result_str = str(self.total_misses) + "," + miss_rate + "%"
+        # result_
+        # print(result_str)
 
     def access(self, access_type, address):
-        self.total_access += 1
-        
+        self.total_access_l1 += 1
+
         # L1
         set_index = (address // self.block_size) % self.num_sets
         tag = address // (self.block_size * self.num_sets)
         cache_set = self.cache[set_index]
-        
-        # L1
-        set_index_l2 = (address // self.block_size) % self.num_l2_sets
-        tag_l2 = address // (self.block_size * self.num_l2_sets)
-        cache_set_l2 = self.cache_l2[set_index_l2]
-        
-        set_index_l3 = (address // self.block_size) % self.num_l3_sets
-        tag_l3 = address // (self.block_size * self.num_l3_sets)
-        cache_set_l3 = self.cache_l3[set_index_l3]
 
         # Check L1 cache
         if tag in cache_set:
@@ -82,30 +104,58 @@ class cache:
                 self.lru_counters[set_index].remove(tag)
                 self.lru_counters[set_index].append(tag)
             return "L1 hit"
-        
-        # Check L2 cache
-        if tag_l2 in cache_set_l2:
-            if self.repl_policy == 'l':
-                self.lru_counters_l2[set_index_l2].remove(tag_l2)
-                self.lru_counters_l2[set_index_l2].append(tag_l2)
-            self._add_to_cache(self.cache, set_index, tag, self.cache_l1_assoc, self.lru_counters)
-            return "L2 hit"
-        
-        # Check L3 cache
-        if tag_l3 in cache_set_l3:
-            if self.repl_policy == 'l':
-                self.lru_counters_l3[set_index_l3].remove(tag_l3)
-                self.lru_counters_l3[set_index_l3].append(tag_l3)
-            self._add_to_cache(self.cache_l2, set_index_l2, tag_l2, self.cache_l2_assoc, self.lru_counters_l2)
-            self._add_to_cache(self.cache, set_index, tag, self.cache_l1_assoc, self.lru_counters)
-            return "L3 hit"
-        
-        # Miss
-        self.total_misses += 1
-        self._add_to_cache(self.cache_l3, set_index_l3, tag_l3, self.cache_l3_assoc, self.lru_counters_l3)
-        self._add_to_cache(self.cache_l2, set_index_l2, tag_l2, self.cache_l2_assoc, self.lru_counters_l2)
+
+        # L1 miss
+        self.total_misses_l1 += 1
+
+        if self.cache_l2_capacity > 0:
+            # L2
+            self.total_access_l2 += 1
+            set_index_l2 = (address // self.block_size) % self.num_l2_sets
+            tag_l2 = address // (self.block_size * self.num_l2_sets)
+            cache_set_l2 = self.cache_l2[set_index_l2]
+
+            # Check L2 cache
+            if tag_l2 in cache_set_l2:
+                if self.repl_policy == 'l':
+                    self.lru_counters_l2[set_index_l2].remove(tag_l2)
+                    self.lru_counters_l2[set_index_l2].append(tag_l2)
+                self._add_to_cache(self.cache, set_index, tag, self.cache_l1_assoc, self.lru_counters)
+                return "L2 hit"
+
+            # L2 miss
+            self.total_misses_l2 += 1
+
+            if self.cache_l3_capacity > 0:
+                # L3
+                self.total_access_l3 += 1
+                set_index_l3 = (address // self.block_size) % self.num_l3_sets
+                tag_l3 = address // (self.block_size * self.num_l3_sets)
+                cache_set_l3 = self.cache_l3[set_index_l3]
+
+                # Check L3 cache
+                if tag_l3 in cache_set_l3:
+                    if self.repl_policy == 'l':
+                        self.lru_counters_l3[set_index_l3].remove(tag_l3)
+                        self.lru_counters_l3[set_index_l3].append(tag_l3)
+                    self._add_to_cache(self.cache_l2, set_index_l2, tag_l2, self.cache_l2_assoc, self.lru_counters_l2)
+                    self._add_to_cache(self.cache, set_index, tag, self.cache_l1_assoc, self.lru_counters)
+                    return "L3 hit"
+
+                # L3 miss
+                self.total_misses_l3 += 1
+
+                # Fetch from memory and update all caches
+                self._add_to_cache(self.cache_l3, set_index_l3, tag_l3, self.cache_l3_assoc, self.lru_counters_l3)
+                self._add_to_cache(self.cache_l2, set_index_l2, tag_l2, self.cache_l2_assoc, self.lru_counters_l2)
+            else:
+                # Fetch from memory and update L1 and L2 caches
+                self._add_to_cache(self.cache_l2, set_index_l2, tag_l2, self.cache_l2_assoc, self.lru_counters_l2)
+
+        # Fetch from memory and update L1 cache
         self._add_to_cache(self.cache, set_index, tag, self.cache_l1_assoc, self.lru_counters)
         return "Miss"
+
 
     def _add_to_cache(self, cache, set_index, tag, assoc, lru_counters):
             cache_set = cache[set_index]
