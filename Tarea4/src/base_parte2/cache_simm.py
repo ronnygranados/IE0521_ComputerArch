@@ -17,16 +17,36 @@ parser.add_option("-t", dest="TRACE_FILE") # Trace file
 
 (options, args) = parser.parse_args()
 
-l1_cache = cache(options.l1_s, options.l1_a,
-                 options.l2_s, options.l2_a,
-                 options.l3_s, options.l3_a,
-                 options.block_size, options.TRACE_FILE, "l")
-# l1_cache = cache(options.l1_s, options.l1_a, options.block_size, "l")
+# if options.l3_s == None and options.l2_s == None:
+#     l1_cache = cache(options.l1_s, options.l1_a, options.block_size, options.TRACE_FILE)
 
+# elif options.l3_s == None and options.l2_s != None:
+#     l1_cache = cache(options.l1_s, options.l1_a, options.l2_s, options.l2_a, options.block_size, options.TRACE_FILE)
+
+# else:
+#     l1_cache = cache(options.l1_s, options.l1_a, 
+#                      options.block_size, options.TRACE_FILE,
+#                      options.l2_s, options.l2_a,
+#                      options.l3_s, options.l3_a)
+
+# Caso: caché L3 sin caché L2
 if options.has_l3 and not options.has_l2:
     raise Exception("No se puede inicializar el caché L3 sin la existencia del caché L2.")
+
+# Casos
+if not options.has_l3 and not options.has_l2:
+    print("Caso 1")
+    l1_cache = cache(options.l1_s, options.l1_a, options.block_size, options.TRACE_FILE)
+elif not options.has_l3 and options.has_l2:
+    print("Caso 2")
+    l1_cache = cache(options.l1_s, options.l1_a, options.block_size, options.TRACE_FILE, options.l2_s, options.l2_a)
 else:
-    pass
+    print("Caso 3")
+    l1_cache = cache(options.l1_s, options.l1_a, 
+                     options.block_size, options.TRACE_FILE,
+                     options.l2_s, options.l2_a,
+                     options.l3_s, options.l3_a)
+
 
 with gzip.open(options.TRACE_FILE,'rt') as trace_fh:
     for line in trace_fh:
